@@ -1,1 +1,8 @@
+# Build directory
 /target
+
+# Enviroment file
+.env
+
+# SQLite3 Databases
+*.db

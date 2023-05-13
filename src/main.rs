@@ -1,10 +1,12 @@
 // TODO: Eliminar despues de implementar
 #![allow(dead_code)]
 
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-
 mod club_member;
 mod project;
+
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use dotenv::dotenv;
+use sqlx::SqlitePool;
 
 #[get("/")]
 async fn hello() -> impl Responder {
@@ -22,6 +24,20 @@ async fn manual_hello() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = match SqlitePool::connect(&database_url).await {
+        Ok(value) => value,
+        _ => std::process::exit(1),
+    };
+
+    match sqlx::query!("SELECT * FROM memos").fetch_one(&pool).await {
+        Ok(value) => println!("{:?}", value.text),
+        _ => std::process::exit(1),
+    };
+
     HttpServer::new(|| {
         App::new()
             .service(hello)
