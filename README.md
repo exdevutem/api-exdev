@@ -10,6 +10,18 @@ Se necesita tener cargo, rust y todo el toolchain relacionado. Puedes instalar e
 
 Con el toolchain instalado, simplemente corre el comando siguiente, y empieza a modificar el código a tu gusto:
 
-```console
-$: cargo run
+```bash
+cargo run
+```
+
+En estos momentos se necesita de SQLite3 para hacer de Base de Datos. La URL de conexion se maneja en un archivo de ambiente `.env` que debe ser creado por ti. Se provee un ejemplo en el repositorio que puedes copiar con el comando:
+
+```bash
+cp .env.example .env
+```
+
+Se recomienda que instales el CLI de `sqlx` para manejar las migraciones. A futuro se planea que estas migraciones se corran junto con el ejecutable! Pero por mientras, puedes hacerlo con el siguiente comando:
+
+```bash
+sqlx migrate run
 ```
