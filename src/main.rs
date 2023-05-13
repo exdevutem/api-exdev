@@ -1,8 +1,7 @@
 // TODO: Eliminar despues de implementar
 #![allow(dead_code)]
 
-mod club_member;
-mod project;
+mod models;
 
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
@@ -28,10 +27,9 @@ async fn main() -> std::io::Result<()> {
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    let pool = match SqlitePool::connect(&database_url).await {
-        Ok(value) => value,
-        _ => std::process::exit(1),
-    };
+    let pool = SqlitePool::connect(&database_url)
+        .await
+        .expect("Could not connect to Database");
 
     match sqlx::query!("SELECT * FROM memos").fetch_one(&pool).await {
         Ok(value) => println!("{:?}", value.text),

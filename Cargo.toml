@@ -8,4 +8,7 @@ edition = "2021"
 [dependencies]
 actix-web = "^4.3.0"
 dotenv = "0.15.0"
+serde = {version = "1.0.163", features = ["derive"]}
+serde_json = "1.0.96"
 sqlx = { version = "0.6", features = [ "sqlite", "runtime-actix-rustls" ] }
+uuid = { version = "1.3.2", features = ["serde", "v4"] }
