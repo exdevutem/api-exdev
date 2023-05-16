@@ -3,11 +3,11 @@ CREATE TABLE club_members (
       uuid TEXT PRIMARY KEY NOT NULL,
       name TEXT NOT NULL,
       birthday TEXT,
-      state TEXT DEFAULT "Active",
+      state TEXT DEFAULT "Active" NOT NULL,
       email TEXT,
       github TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
 CREATE TABLE projects (
@@ -16,7 +16,7 @@ CREATE TABLE projects (
     description TEXT,
     state TEXT DEFAULT "NotStarted" NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
 CREATE TABLE project_involvement (
