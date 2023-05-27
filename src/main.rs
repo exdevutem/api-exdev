@@ -34,7 +34,13 @@ struct AppState {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url =
+        std::env::var("DATABASE_URL").expect("No se ha seteado la URL de la base de datos.");
+    let host = std::env::var("HOST").unwrap_or(String::from("127.0.0.1"));
+    let port = std::env::var("PORT")
+        .unwrap_or(String::from("8080"))
+        .parse::<u16>()
+        .expect("No se pudo parsear el puerto");
 
     let pool = SqlitePool::connect(&database_url)
         .await
@@ -45,7 +51,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(AppState { pool: pool.clone() }))
             .service(get_club_members)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind((host, port))?
     .run()
     .await
 }
