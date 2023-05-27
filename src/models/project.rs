@@ -1,6 +1,6 @@
-use crate::models::club_member::ClubMember;
-
 use serde::{Deserialize, Serialize};
+
+use super::club_member::ClubMemberModel;
 
 #[derive(Debug, Deserialize, Serialize)]
 enum ProjectState {
@@ -15,7 +15,7 @@ enum ProjectState {
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Project {
     uuid: String,
-    involved: Vec<ClubMember>,
+    involved: Vec<ClubMemberModel>,
     name: String,
     description: String,
     state: ProjectState,
