@@ -17,6 +17,15 @@ pub struct CreateMemberSchema {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct UpdateMemberSchema {
+    pub name: Option<String>,
+    pub birthday: Option<String>,
+    pub email: Option<String>,
+    pub github: Option<String>,
+    pub state: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ClubMemberResponse {
     uuid: String,
     name: String,

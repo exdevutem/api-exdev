@@ -4,8 +4,9 @@
 mod models;
 mod schemas;
 
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, put, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
+use schemas::club_member::UpdateMemberSchema;
 use serde_json::json;
 use sqlx::SqlitePool;
 
@@ -68,6 +69,82 @@ async fn add_club_member(
     }))
 }
 
+#[put("/{id}")]
+async fn update_club_member(
+    path: web::Path<uuid::Uuid>,
+    body: web::Json<UpdateMemberSchema>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let member_id = path.into_inner().to_string();
+
+    let query_result = sqlx::query_as!(
+        ClubMemberModel,
+        r#"SELECT * FROM club_members WHERE uuid = ?"#,
+        member_id
+    )
+    .fetch_one(&data.pool)
+    .await;
+
+    let member = match query_result {
+        Ok(member) => member,
+        Err(sqlx::Error::RowNotFound) => {
+            return HttpResponse::NotFound().json(json!({
+                "status": 404,
+                "message": "No se encontro el miembro referido."
+            }))
+        }
+        Err(e) => {
+            // WARN: Esto pasa el mensaje de error directo. Deberia haber un filtro a futuro que lo
+            // saque si no estamos en ambiente de desarrollo.
+            return HttpResponse::InternalServerError().json(json!({
+                "status": 500,
+                "message": "Ocurrio algo inesperado...",
+                "debug": e.to_string()
+            }));
+        }
+    };
+
+    // No se si hay una forma mas bonita de hacer esto...
+    // Segun estuve leyendo, solo se puede hacer 'bonito' si no se usa la version en macro de
+    // `sqlx::query`, una lastima!
+    let name = body.name.to_owned().unwrap_or_else(|| member.name);
+    // TODO: Verificar que sea una fecha.
+    let birthday = body.birthday.to_owned().or(member.birthday);
+    let email = body.email.to_owned().or(member.email);
+    let github = body.github.to_owned().or(member.github);
+    let state = body.state.to_owned().unwrap_or_else(|| member.state);
+
+    let update_member = sqlx::query!(
+        r#"
+    UPDATE club_members
+    SET name = ?, birthday = ?, email = ?, github = ?, state = ? WHERE uuid = ?"#,
+        name,
+        birthday,
+        email,
+        github,
+        state,
+        member_id
+    )
+    .execute(&data.pool)
+    .await;
+
+    match update_member {
+        Ok(_) => HttpResponse::Ok().json(json!({
+            "status": 200,
+            "message": "Se ha actualizado la informacion del miembro."
+        })),
+        Err(e) => {
+            // WARN: Esto pasa el mensaje de error directo. Deberia haber un filtro a futuro que lo
+            // saque si no estamos en ambiente de desarrollo.
+            return HttpResponse::InternalServerError().json(json!({
+                "status": 500,
+                "message": "Ocurrio algo inesperado...",
+                "debug": e.to_string()
+            }));
+        }
+    }
+}
+
 struct AppState {
     pool: SqlitePool,
 }
@@ -93,6 +170,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(AppState { pool: pool.clone() }))
             .service(get_club_members)
             .service(add_club_member)
+            .service(update_club_member)
     })
     .bind((host, port))?
     .run()
