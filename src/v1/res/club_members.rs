@@ -1,4 +1,4 @@
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
 use crate::{
@@ -154,6 +154,59 @@ async fn update_club_member(
         Err(e) => {
             // WARN: Esto pasa el mensaje de error directo. Deberia haber un filtro a futuro que lo
             // saque si no estamos en ambiente de desarrollo.
+            return HttpResponse::InternalServerError().json(json!({
+                "status": 500,
+                "message": "Ocurrio algo inesperado...",
+                "debug": e.to_string()
+            }));
+        }
+    }
+}
+
+#[delete("/{id}")]
+pub async fn delete_member(
+    path: web::Path<uuid::Uuid>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let member_id = path.into_inner().to_string();
+
+    let query_result = sqlx::query_as!(
+        ClubMemberModel,
+        r#"SELECT * FROM club_members WHERE uuid = ?"#,
+        member_id
+    )
+    .fetch_one(&data.pool)
+    .await;
+
+    let member = match query_result {
+        Ok(member) => member,
+        Err(sqlx::Error::RowNotFound) => {
+            return HttpResponse::NotFound().json(json!({
+                "status": 404,
+                "message": "No se encontro el miembro referido."
+            }))
+        }
+        Err(e) => {
+            // WARN: Esto pasa el mensaje de error directo. Deberia haber un filtro a futuro que lo
+            // saque si no estamos en ambiente de desarrollo.
+            return HttpResponse::InternalServerError().json(json!({
+                "status": 500,
+                "message": "Ocurrio algo inesperado...",
+                "debug": e.to_string()
+            }));
+        }
+    };
+
+    let deleted_result = sqlx::query!(r#"DELETE FROM club_members WHERE uuid = ?"#, member.uuid)
+        .execute(&data.pool)
+        .await;
+
+    match deleted_result {
+        Ok(_) => HttpResponse::Ok().json(json!({
+            "status": "200",
+            "message": "Se ha eliminado el registro con exito."
+        })),
+        Err(e) => {
             return HttpResponse::InternalServerError().json(json!({
                 "status": 500,
                 "message": "Ocurrio algo inesperado...",
