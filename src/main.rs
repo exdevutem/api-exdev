@@ -6,7 +6,6 @@ mod v1;
 use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
 use sqlx::SqlitePool;
-use v1::res::club_members::{add_club_member, get_club_members, update_club_member};
 
 pub struct AppState {
     pool: SqlitePool,
@@ -31,9 +30,7 @@ async fn main() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState { pool: pool.clone() }))
-            .service(get_club_members)
-            .service(add_club_member)
-            .service(update_club_member)
+            .service(v1::routes())
     })
     .bind((host.clone(), port))?
     .run();

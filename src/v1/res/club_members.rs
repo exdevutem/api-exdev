@@ -7,7 +7,7 @@ use crate::{
     AppState,
 };
 
-#[get("/members")]
+#[get("")]
 async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
     let members = sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
         .fetch_all(&data.pool)
@@ -22,7 +22,7 @@ async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json(json!({"status": 200, "members": members}))
 }
 
-#[post("/members/create")]
+#[post("/create")]
 async fn add_club_member(
     body: web::Json<CreateMemberSchema>,
     data: web::Data<AppState>,
@@ -61,7 +61,7 @@ async fn add_club_member(
     }))
 }
 
-#[put("/members/{id}")]
+#[put("/{id}")]
 async fn update_club_member(
     path: web::Path<uuid::Uuid>,
     body: web::Json<UpdateMemberSchema>,
