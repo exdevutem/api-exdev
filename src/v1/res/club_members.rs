@@ -12,7 +12,7 @@ async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
     let members = sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
         .fetch_all(&data.pool)
         .await
-        .unwrap();
+        .unwrap_or_default();
 
     let members = members
         .into_iter()
@@ -20,6 +20,32 @@ async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
         .collect::<Vec<ClubMemberResponse>>();
 
     HttpResponse::Ok().json(json!({"status": 200, "members": members}))
+}
+
+#[get("/{id}")]
+async fn get_single_member(
+    path: web::Path<uuid::Uuid>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    let member_id = path.into_inner().to_string();
+
+    let member = sqlx::query_as!(
+        ClubMemberModel,
+        "SELECT * FROM club_members WHERE ?",
+        member_id
+    )
+    .fetch_one(&data.pool)
+    .await;
+
+    let member = match member {
+        Ok(row) => ClubMemberResponse::new(&row),
+        Err(_) => {
+            return HttpResponse::NotFound()
+                .json(json!({"status": 404, "message": "No se encontro el miembro."}));
+        }
+    };
+
+    HttpResponse::Ok().json(json!({"status": 200, "member": member}))
 }
 
 #[post("/create")]
