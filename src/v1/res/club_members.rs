@@ -31,7 +31,7 @@ async fn get_single_member(
 
     let member = sqlx::query_as!(
         ClubMemberModel,
-        "SELECT * FROM club_members WHERE ?",
+        "SELECT * FROM club_members WHERE uuid = ?",
         member_id
     )
     .fetch_one(&data.pool)
