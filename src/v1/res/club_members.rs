@@ -2,12 +2,12 @@ use actix_web::{get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
 use crate::{
-    models::club_member::ClubMemberModel,
-    schemas::club_member::{ClubMemberResponse, CreateMemberSchema, UpdateMemberSchema},
+    v1::models::club_member::ClubMemberModel,
+    v1::schemas::club_member::{ClubMemberResponse, CreateMemberSchema, UpdateMemberSchema},
     AppState,
 };
 
-#[get("/members/")]
+#[get("/members")]
 async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
     let members = sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
         .fetch_all(&data.pool)
@@ -22,7 +22,7 @@ async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
     HttpResponse::Ok().json(json!({"status": 200, "members": members}))
 }
 
-#[post("/members/")]
+#[post("/members/create")]
 async fn add_club_member(
     body: web::Json<CreateMemberSchema>,
     data: web::Data<AppState>,

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::club_member::ClubMemberModel;
+use crate::v1::models::club_member::ClubMemberModel;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateMemberSchema {

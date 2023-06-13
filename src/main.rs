@@ -1,14 +1,12 @@
 // TODO: Eliminar despues de implementar
 #![allow(dead_code)]
 
-mod models;
-mod res;
-mod schemas;
+mod v1;
 
 use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
-use res::club_members::{add_club_member, get_club_members, update_club_member};
 use sqlx::SqlitePool;
+use v1::res::club_members::{add_club_member, get_club_members, update_club_member};
 
 pub struct AppState {
     pool: SqlitePool,
