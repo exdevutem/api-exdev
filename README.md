@@ -8,20 +8,41 @@ Preventivamente se decidició utilizar Rust con el framework Actix para este pro
 
 Se necesita tener cargo, rust y todo el toolchain relacionado. Puedes instalar este toolchain [siguiendo estas instrucciones](https://www.rust-lang.org/tools/install).
 
-Con el toolchain instalado, simplemente corre el comando siguiente, y empieza a modificar el código a tu gusto:
+La siguiente dependencia importante es SQLite3. Necesitas tener un archivo de ambiente que especifique la URL de conexion de la base de datos; o sea, el archivo donde se guardarán los datos.
+
+La solución más sencilla es la creación de un archivo llamado `data.db`:
+
+```bash
+touch data.db # Archivo de base de datos SQLite3.
+cp .env.example .env # Archivo de ambiente por defecto.
+```
+
+El último paso es correr las migraciones necesarias. Primero, instala la herramienta de terminal de SQLx con el siguiente comando:
+
+```bash
+cargo install sqlx-cli
+```
+
+Hecho esto, puedes correr las migraciones con el comando:
+
+```bash
+sqlx migrate run
+```
+
+Con el toolchain instalado, SQLite3 listo, y las migraciones hechas, simplemente corre el comando siguiente, y empieza a modificar el código a tu gusto:
 
 ```bash
 cargo run
 ```
 
-En estos momentos se necesita de SQLite3 para hacer de Base de Datos. La URL de conexion se maneja en un archivo de ambiente `.env` que debe ser creado por ti. Se provee un ejemplo en el repositorio que puedes copiar con el comando:
+Esto es opcional! pero si te es cómodo que recompile el código conforme estás modificándolo, puedes hacerlo con cargo watch. Instálalo con el siguiente comando:
 
 ```bash
-cp .env.example .env
+cargo install cargo-watch
 ```
 
-Se recomienda que instales el CLI de `sqlx` para manejar las migraciones. A futuro se planea que estas migraciones se corran junto con el ejecutable! Pero por mientras, puedes hacerlo con el siguiente comando:
+Luego, puedes utilizarlo con un comando como el siguiente:
 
 ```bash
-sqlx migrate run
+cargo watch -c -x run
 ```
