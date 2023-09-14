@@ -1,12 +1,10 @@
--- API User table
-CREATE TABLE users (
+-- Add up migration script here
+CREATE TABLE apps (
   uuid TEXT PRIMARY KEY NOT NULL,
-  username TEXT NOT NULL,
-  password TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
   api_token TEXT NOT NULL,
-  member_id TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-  FOREIGN KEY(member_id) REFERENCES tableName(club_members)
+  deleted_at TIMESTAMP DEFAULT NULL
 );
