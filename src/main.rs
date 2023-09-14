@@ -5,10 +5,12 @@ mod v1;
 
 use actix_web::{web, App, HttpServer};
 use dotenv::dotenv;
+use prefixed_api_key::PrefixedApiKeyController;
 use sqlx::SqlitePool;
 
 pub struct AppState {
     pool: SqlitePool,
+    pak_controller: PrefixedApiKeyController<rand::rngs::OsRng, sha2::Sha256>,
 }
 
 #[actix_web::main]
@@ -27,9 +29,19 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Could not connect to Database");
 
+    // Create the API Key controller for the app.
+    let pak_controller = PrefixedApiKeyController::configure()
+        .prefix("ExDevUtem".to_owned())
+        .seam_defaults()
+        .finalize()
+        .expect("Could not create Prefixed Api Key Controller");
+
     let server = HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(AppState { pool: pool.clone() }))
+            .app_data(web::Data::new(AppState {
+                pool: pool.clone(),
+                pak_controller: pak_controller.clone(),
+            }))
             .service(v1::routes())
     })
     .bind((host.clone(), port))?
