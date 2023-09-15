@@ -1,7 +1,10 @@
 use actix_web::{post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
-use crate::{v1::schemas::auth::CreateAppSchema, AppState};
+use crate::{
+    v1::{models::auth::AppModel, schemas::auth::CreateAppSchema},
+    AppState,
+};
 
 #[post("/register")]
 async fn register(body: web::Json<CreateAppSchema>, data: web::Data<AppState>) -> impl Responder {
@@ -16,7 +19,7 @@ async fn register(body: web::Json<CreateAppSchema>, data: web::Data<AppState>) -
         INSERT INTO apps(uuid, name, description, api_token)
         VALUES (?, ?, ?, ?);"#,
     )
-    .bind(app_id)
+    .bind(&app_id)
     .bind(name)
     .bind(description)
     .bind(hash)
@@ -36,13 +39,36 @@ async fn register(body: web::Json<CreateAppSchema>, data: web::Data<AppState>) -
         );
     }
 
-    HttpResponse::Ok().json(json!({
+    HttpResponse::Created().json(json!({
         "status": 201,
         "api_key": pak.to_string(),
+        "app_id": app_id,
     }))
 }
 
-#[put("/regenerate")]
-async fn regenerate() -> impl Responder {
-    HttpResponse::Ok()
+#[put("/regenerate/{id}")]
+async fn regenerate(
+    body: web::Json<CreateAppSchema>,
+    data: web::Data<AppState>,
+    path: web::Path<uuid::Uuid>,
+) -> impl Responder {
+    let app_id = path.into_inner().to_string();
+
+    let app = sqlx::query_as!(AppModel, "SELECT * FROM apps WHERE uuid = ?", app_id)
+        .fetch_one(&data.pool)
+        .await;
+
+    // Abortamos si no existe la app.
+    if let Err(e) = app {
+        return HttpResponse::NotFound().json(json!({
+            "status": 404,
+            "message": "No se encontro la app buscada",
+            "debug": e.to_string()
+        }));
+    };
+
+    HttpResponse::Ok().json(json!({
+        "status": 200,
+        "message": "App actualizada correctamente"
+    }))
 }
