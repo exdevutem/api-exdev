@@ -2,7 +2,10 @@ use actix_web::{post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
 use crate::{
-    v1::{models::auth::AppModel, schemas::auth::CreateAppSchema},
+    v1::{
+        models::auth::AppModel,
+        schemas::auth::{CreateAppSchema, UpdateAppSchema},
+    },
     AppState,
 };
 
@@ -48,27 +51,49 @@ async fn register(body: web::Json<CreateAppSchema>, data: web::Data<AppState>) -
 
 #[put("/regenerate/{id}")]
 async fn regenerate(
-    body: web::Json<CreateAppSchema>,
+    body: web::Json<UpdateAppSchema>,
     data: web::Data<AppState>,
     path: web::Path<uuid::Uuid>,
 ) -> impl Responder {
     let app_id = path.into_inner().to_string();
 
-    let app = sqlx::query_as!(AppModel, "SELECT * FROM apps WHERE uuid = ?", app_id)
+    let query_result = sqlx::query_as!(AppModel, "SELECT * FROM apps WHERE uuid = ?", app_id)
         .fetch_one(&data.pool)
         .await;
 
     // Abortamos si no existe la app.
-    if let Err(e) = app {
-        return HttpResponse::NotFound().json(json!({
-            "status": 404,
-            "message": "No se encontro la app buscada",
-            "debug": e.to_string()
-        }));
+    let app = match query_result {
+        Ok(app) => app,
+        Err(e) => {
+            return HttpResponse::NotFound().json(json!({
+                "status": 404,
+                "message": "No se encontro la app buscada",
+                "debug": e.to_string()
+            }));
+        }
     };
 
-    HttpResponse::Ok().json(json!({
-        "status": 200,
-        "message": "App actualizada correctamente"
-    }))
+    let name = body.name.to_owned().unwrap_or(app.name);
+    let desc = body.description.to_owned().or(app.description);
+
+    let query_result = sqlx::query!(
+        r#"UPDATE apps SET name = ?, description = ? WHERE uuid = ?"#,
+        name,
+        desc,
+        app_id
+    )
+    .execute(&data.pool)
+    .await;
+
+    match query_result {
+        Ok(_) => HttpResponse::Ok().json(json!({
+            "status": 200,
+            "message": "App actualizada correctamente"
+        })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+        "status": 500,
+         "message": "No se pudo actualizar el registro",
+         "debug": e.to_string()
+        })),
+    }
 }
