@@ -9,6 +9,15 @@ pub enum MemberState {
     NoLongerAMember,
 }
 
+impl MemberState {
+    pub async fn get_all(pool: &sqlx::SqlitePool) -> anyhow::Result<Vec<ClubMemberModel>> {
+        sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
+            .fetch_all(pool)
+            .await
+            .map_err(|e| e.into())
+    }
+}
+
 impl From<String> for MemberState {
     fn from(input: String) -> MemberState {
         match input.as_str() {

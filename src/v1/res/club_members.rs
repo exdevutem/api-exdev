@@ -2,24 +2,18 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
 use crate::{
-    v1::models::club_member::ClubMemberModel,
+    v1::models::club_member::{ClubMemberModel, MemberState},
     v1::schemas::club_member::{ClubMemberResponse, CreateMemberSchema, UpdateMemberSchema},
     AppState,
 };
 
 #[get("")]
 async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
-    let members = sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
-        .fetch_all(&data.pool)
-        .await
-        .unwrap_or_default();
+    // NOTE: Esto devuelve [] en caso de error.
+    let members = MemberState::get_all(&data.pool).await.unwrap_or_default();
+    let members = ClubMemberResponse::from_vector(&members);
 
-    let members = members
-        .into_iter()
-        .map(|model| -> ClubMemberResponse { ClubMemberResponse::new(&model) })
-        .collect::<Vec<ClubMemberResponse>>();
-
-    HttpResponse::Ok().json(json!({"status": 200, "members": members}))
+    HttpResponse::Ok().json(json!({"status": 200, "members": members }))
 }
 
 #[get("/{id}")]
