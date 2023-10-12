@@ -2,15 +2,17 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
 use crate::{
-    v1::models::club_member::{ClubMemberModel, MemberState},
     v1::schemas::club_member::{ClubMemberResponse, CreateMemberSchema, UpdateMemberSchema},
+    v1::{models::club_member::ClubMemberModel, responders::errors::DBError},
     AppState,
 };
 
 #[get("")]
 async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
     // NOTE: Esto devuelve [] en caso de error.
-    let members = MemberState::get_all(&data.pool).await.unwrap_or_default();
+    let members = ClubMemberModel::get_all(&data.pool)
+        .await
+        .unwrap_or_default();
     let members = ClubMemberResponse::from_vector(&members);
 
     HttpResponse::Ok().json(json!({"status": 200, "members": members }))
@@ -20,26 +22,14 @@ async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
 async fn get_single_member(
     path: web::Path<uuid::Uuid>,
     data: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<HttpResponse, DBError> {
     let member_id = path.into_inner().to_string();
 
-    let member = sqlx::query_as!(
-        ClubMemberModel,
-        "SELECT * FROM club_members WHERE uuid = ?",
-        member_id
-    )
-    .fetch_one(&data.pool)
-    .await;
+    let member: ClubMemberResponse = ClubMemberModel::get_one(&member_id, &data.pool)
+        .await?
+        .into();
 
-    let member = match member {
-        Ok(row) => ClubMemberResponse::new(&row),
-        Err(_) => {
-            return HttpResponse::NotFound()
-                .json(json!({"status": 404, "message": "No se encontro el miembro."}));
-        }
-    };
-
-    HttpResponse::Ok().json(json!({"status": 200, "member": member}))
+    Ok(HttpResponse::Ok().json(json!({"status": 200, "member": member})))
 }
 
 #[post("/create")]

@@ -9,15 +9,6 @@ pub enum MemberState {
     NoLongerAMember,
 }
 
-impl MemberState {
-    pub async fn get_all(pool: &sqlx::SqlitePool) -> anyhow::Result<Vec<ClubMemberModel>> {
-        sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
-            .fetch_all(pool)
-            .await
-            .map_err(|e| e.into())
-    }
-}
-
 impl From<String> for MemberState {
     fn from(input: String) -> MemberState {
         match input.as_str() {
@@ -51,4 +42,28 @@ pub struct ClubMemberModel {
     pub github: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+}
+
+impl ClubMemberModel {
+    pub async fn get_all(pool: &sqlx::SqlitePool) -> Result<Vec<ClubMemberModel>, sqlx::Error> {
+        sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
+            .fetch_all(pool)
+            .await
+            .map_err(|e| e.into())
+    }
+
+    pub async fn get_one(
+        member_id: impl Into<String>,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<ClubMemberModel, sqlx::Error> {
+        let member_id: String = member_id.into();
+        sqlx::query_as!(
+            ClubMemberModel,
+            "SELECT * FROM club_members WHERE uuid = ?",
+            member_id
+        )
+        .fetch_one(pool)
+        .await
+        .map_err(|e| e.into())
+    }
 }
