@@ -2,6 +2,7 @@ use actix_web::web;
 
 pub mod models;
 pub mod res;
+pub mod responders;
 pub mod schemas;
 
 pub fn routes() -> actix_web::Scope {
