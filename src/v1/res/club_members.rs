@@ -1,4 +1,4 @@
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use serde_json::json;
 
 use crate::{
@@ -8,14 +8,13 @@ use crate::{
 };
 
 #[get("")]
-async fn get_club_members(data: web::Data<AppState>) -> impl Responder {
+async fn get_club_members(data: web::Data<AppState>) -> Result<HttpResponse, DBError> {
     // NOTE: Esto devuelve [] en caso de error.
-    let members = ClubMemberModel::get_all(&data.pool)
-        .await
-        .unwrap_or_default();
+    let members = ClubMemberModel::get_all(&data.pool).await?;
+
     let members = ClubMemberResponse::from_vector(&members);
 
-    HttpResponse::Ok().json(json!({"status": 200, "members": members }))
+    Ok(HttpResponse::Ok().json(json!({"status": 200, "members": members })))
 }
 
 #[get("/{id}")]
@@ -47,7 +46,7 @@ async fn add_club_member(
     })))
 }
 
-#[put("/{id}")]
+#[put("/update/{id}")]
 async fn update_club_member(
     path: web::Path<uuid::Uuid>,
     body: web::Json<UpdateMemberSchema>,
@@ -65,7 +64,7 @@ async fn update_club_member(
     })))
 }
 
-#[delete("/{id}")]
+#[delete("/delete/{id}")]
 pub async fn delete_member(
     path: web::Path<uuid::Uuid>,
     data: web::Data<AppState>,
