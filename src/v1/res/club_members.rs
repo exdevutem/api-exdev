@@ -36,39 +36,15 @@ async fn get_single_member(
 async fn add_club_member(
     body: web::Json<CreateMemberSchema>,
     data: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<HttpResponse, DBError> {
     let member_id = uuid::Uuid::new_v4().to_string();
 
-    let query_result = sqlx::query(
-        r#"
-    INSERT INTO club_members (uuid, name, birthday, email, github)
-    VALUES (?, ?, ?, ?, ?)"#,
-    )
-    .bind(member_id.clone())
-    .bind(body.name.to_string())
-    .bind(body.birthday.to_owned())
-    .bind(body.email.to_owned())
-    .bind(body.github.to_owned())
-    .execute(&data.pool)
-    .await
-    .map_err(|err: sqlx::Error| err.to_string());
+    ClubMemberModel::create(&member_id, body.into_inner(), &data.pool).await?;
 
-    if let Err(err) = query_result {
-        return HttpResponse::InternalServerError().json(
-            // WARN: Esto pasa el mensaje de error directo. Deberia haber un filtro a futuro que lo
-            // saque si no estamos en ambiente de desarrollo.
-            json!({
-                "status": 500,
-                "message": "Ha ocurrido un error interno",
-                "debug" : err
-            }),
-        );
-    }
-
-    HttpResponse::Ok().json(json!({
+    Ok(HttpResponse::Ok().json(json!({
         "status": 200,
         "message": "Se ha agregado correctamente al miembro!"
-    }))
+    })))
 }
 
 #[put("/{id}")]

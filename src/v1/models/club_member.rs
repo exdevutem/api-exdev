@@ -1,5 +1,8 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use sqlx::sqlite::SqliteQueryResult;
+
+use crate::v1::schemas::club_member::CreateMemberSchema;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MemberState {
@@ -65,5 +68,24 @@ impl ClubMemberModel {
         .fetch_one(pool)
         .await
         .map_err(|e| e.into())
+    }
+
+    pub async fn create(
+        member_id: &String,
+        value: CreateMemberSchema,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<SqliteQueryResult, sqlx::Error> {
+        sqlx::query(
+            r#"
+    INSERT INTO club_members (uuid, name, birthday, email, github)
+    VALUES (?, ?, ?, ?, ?)"#,
+        )
+        .bind(member_id.clone())
+        .bind(value.name)
+        .bind(value.birthday)
+        .bind(value.email)
+        .bind(value.github)
+        .execute(pool)
+        .await
     }
 }
