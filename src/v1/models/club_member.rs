@@ -109,4 +109,13 @@ impl ClubMemberModel {
         .execute(pool)
         .await
     }
+
+    pub async fn delete(
+        member: &ClubMemberModel,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<SqliteQueryResult, sqlx::Error> {
+        sqlx::query!(r#"DELETE FROM club_members WHERE uuid = ?"#, member.uuid)
+            .execute(pool)
+            .await
+    }
 }
