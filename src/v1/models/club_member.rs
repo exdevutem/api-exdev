@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteQueryResult;
 
-use crate::v1::schemas::club_member::CreateMemberSchema;
+use crate::v1::schemas::club_member::{CreateMemberSchema, UpdateMemberSchema};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MemberState {
@@ -85,6 +85,27 @@ impl ClubMemberModel {
         .bind(value.birthday)
         .bind(value.email)
         .bind(value.github)
+        .execute(pool)
+        .await
+    }
+
+    pub async fn update(
+        member: ClubMemberModel,
+        new_data: UpdateMemberSchema,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<SqliteQueryResult, sqlx::Error> {
+        sqlx::query(
+            r#"
+    UPDATE club_members
+    SET name = ?, birthday = ?, email = ?, github = ?, state = ? WHERE uuid = ?"#,
+        )
+        .bind(new_data.name.to_owned().unwrap_or_else(|| member.name))
+        // TODO: Verificar que sea una fecha.
+        .bind(new_data.birthday.to_owned().or(member.birthday))
+        .bind(new_data.email.to_owned().or(member.email))
+        .bind(new_data.github.to_owned().or(member.github))
+        .bind(new_data.state.to_owned().unwrap_or_else(|| member.state))
+        .bind(member.uuid)
         .execute(pool)
         .await
     }

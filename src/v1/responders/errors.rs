@@ -22,10 +22,16 @@ impl actix_web::error::ResponseError for DBError {
     fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
         HttpResponse::build(self.status_code())
             .insert_header(ContentType::json())
-            .body("Ocurrió un error en la bdd.")
+            .body(match self.0 {
+                sqlx::Error::RowNotFound => "No se ha encontrado el recurso buscado",
+                _ => "Ocurrió un error en la bdd.",
+            })
     }
 
     fn status_code(&self) -> actix_web::http::StatusCode {
-        StatusCode::INTERNAL_SERVER_ERROR
+        match self.0 {
+            sqlx::Error::RowNotFound => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
     }
 }
