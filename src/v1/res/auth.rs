@@ -1,3 +1,8 @@
+//! Handlers relacionados a la creación de Applicaciones clientes de la API.
+//!
+//! Solo existen dos rutas en este momento: una que crea estas aplicaciones y otra que regenera la
+//! llave en caso de necesitarse.
+
 use actix_web::{post, put, web, HttpResponse, Responder};
 use serde_json::json;
 
@@ -9,6 +14,7 @@ use crate::{
     AppState,
 };
 
+/// Crea una nueva aplicación
 #[post("/register")]
 async fn register(body: web::Json<CreateAppSchema>, data: web::Data<AppState>) -> impl Responder {
     let app_id = uuid::Uuid::new_v4().to_string();
@@ -49,6 +55,7 @@ async fn register(body: web::Json<CreateAppSchema>, data: web::Data<AppState>) -
     }))
 }
 
+/// Regenera la llave de la aplicación.
 #[put("/regenerate/{id}")]
 async fn regenerate(
     body: web::Json<UpdateAppSchema>,
