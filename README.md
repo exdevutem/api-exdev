@@ -4,6 +4,14 @@ Esta es una API multipropósitos del club ExDev. La idea es que sea un sistema m
 
 Preventivamente se decidició utilizar Rust con el framework Actix para este propósito, pero aún no es una idea fija.
 
+## Documentación
+
+Existe una documentación hecha con rustdocs que puede ser compilada con cargo. Para poder leerla, ejecuta el siguiente comando:
+
+```bash
+cargo doc --open
+```
+
 ## Instrucciones para montar
 
 Se necesita tener cargo, rust y todo el toolchain relacionado. Puedes instalar este toolchain [siguiendo estas instrucciones](https://www.rust-lang.org/tools/install).
