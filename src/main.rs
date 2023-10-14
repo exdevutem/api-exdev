@@ -21,12 +21,6 @@ use dotenv::dotenv;
 use prefixed_api_key::PrefixedApiKeyController;
 use sqlx::SqlitePool;
 
-/// Primer módulo de la API
-///
-/// Cada módulo de la API contiene los modelos de conexión con la BDD, los handles (en la carpeta
-/// res) para cada respuesta de la API, los responders (o estructuras diseñadas para tener
-/// respuestas estándar) y los schemas (estructuras para las respuestas específicas de cada
-/// handler.)
 pub mod v1;
 
 /// Estructura del estado de la aplicación.
