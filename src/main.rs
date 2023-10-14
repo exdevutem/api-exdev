@@ -1,6 +1,3 @@
-// TODO: Eliminar despues de implementar
-#![allow(dead_code)]
-
 mod v1;
 
 use actix_web::{web, App, HttpServer};
