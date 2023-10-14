@@ -24,9 +24,9 @@ impl From<String> for MemberState {
     }
 }
 
-impl Into<String> for MemberState {
-    fn into(self: MemberState) -> String {
-        match self {
+impl From<MemberState> for String {
+    fn from(val: MemberState) -> Self {
+        match val {
             MemberState::Active => String::from("Active"),
             MemberState::Unactive => String::from("Unactive"),
             MemberState::Graduated => String::from("Graduated"),
@@ -52,7 +52,6 @@ impl ClubMemberModel {
         sqlx::query_as!(ClubMemberModel, "SELECT * FROM club_members")
             .fetch_all(pool)
             .await
-            .map_err(|e| e.into())
     }
 
     pub async fn get_one(
@@ -67,11 +66,10 @@ impl ClubMemberModel {
         )
         .fetch_one(pool)
         .await
-        .map_err(|e| e.into())
     }
 
     pub async fn create(
-        member_id: &String,
+        member_id: &str,
         value: CreateMemberSchema,
         pool: &sqlx::SqlitePool,
     ) -> Result<SqliteQueryResult, sqlx::Error> {
@@ -99,12 +97,12 @@ impl ClubMemberModel {
     UPDATE club_members
     SET name = ?, birthday = ?, email = ?, github = ?, state = ? WHERE uuid = ?"#,
         )
-        .bind(new_data.name.to_owned().unwrap_or_else(|| member.name))
+        .bind(new_data.name.to_owned().unwrap_or(member.name))
         // TODO: Verificar que sea una fecha.
         .bind(new_data.birthday.to_owned().or(member.birthday))
         .bind(new_data.email.to_owned().or(member.email))
         .bind(new_data.github.to_owned().or(member.github))
-        .bind(new_data.state.to_owned().unwrap_or_else(|| member.state))
+        .bind(new_data.state.to_owned().unwrap_or(member.state))
         .bind(member.uuid)
         .execute(pool)
         .await

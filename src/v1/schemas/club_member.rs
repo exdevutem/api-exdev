@@ -53,10 +53,10 @@ impl ClubMemberResponse {
         }
     }
 
-    pub fn from_vector(member_models: &Vec<ClubMemberModel>) -> Vec<ClubMemberResponse> {
+    pub fn from_vector(member_models: &[ClubMemberModel]) -> Vec<ClubMemberResponse> {
         member_models
-            .into_iter()
-            .map(|model| -> ClubMemberResponse { ClubMemberResponse::new(&model) })
+            .iter()
+            .map(|model| -> ClubMemberResponse { ClubMemberResponse::new(model) })
             .collect::<Vec<ClubMemberResponse>>()
     }
 }
