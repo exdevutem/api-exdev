@@ -20,10 +20,6 @@ pub struct ProjectModel {
     /// Identificador único del proyecto
     uuid: String,
 
-    /// Integrantes relacionados a este proyecto.
-    #[sqlx(skip)]
-    involved: Vec<ClubMemberResponse>,
-
     /// Nombre del proyecto.
     name: String,
 
@@ -31,8 +27,11 @@ pub struct ProjectModel {
     description: Option<String>,
 
     /// Estado actual del proyecto.
-    #[sqlx(rename = "state:ProjectState")]
     state: ProjectState,
+
+    /// Integrantes relacionados a este proyecto.
+    #[sqlx(skip)]
+    involved: Vec<ClubMemberResponse>,
 
     /// Fecha de creación
     pub created_at: NaiveDateTime,
@@ -97,19 +96,11 @@ impl ProjectModel {
         let id = id.to_string().to_owned();
 
         // Busco el proyecto.
-        let mut project: ProjectModel = sqlx::query_as(
-            r#"SELECT 
-                projects.uuid, 
-                projects.name, 
-                projects.description, 
-                projects.created_at, 
-                projects.updated_at, 
-                projects.state as "state:ProjectState"  
-            FROM projects WHERE projects.uuid = $1"#,
-        )
-        .bind(id.clone())
-        .fetch_one(pool)
-        .await?;
+        let mut project: ProjectModel =
+            sqlx::query_as(r#"SELECT * FROM projects WHERE projects.uuid = $1"#)
+                .bind(id.clone())
+                .fetch_one(pool)
+                .await?;
 
         let involved: Vec<ClubMemberModel> = sqlx::query_as(
             r#"SELECT club_members.* FROM club_members
