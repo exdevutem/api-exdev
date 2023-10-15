@@ -5,33 +5,44 @@
 
 use std::str::FromStr;
 
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+
+use crate::v1::schemas::club_member::ClubMemberResponse;
 
 use super::club_member::ClubMemberModel;
 
 /// Estructura de un proyecto.
 ///
 /// Contiene un vector de integrantes que es mapeado en una relación n:m.
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
-pub struct Project {
+#[derive(Serialize, Deserialize, sqlx::FromRow)]
+pub struct ProjectModel {
     /// Identificador único del proyecto
     uuid: String,
 
     /// Integrantes relacionados a este proyecto.
-    involved: Vec<ClubMemberModel>,
+    #[sqlx(skip)]
+    involved: Vec<ClubMemberResponse>,
 
     /// Nombre del proyecto.
     name: String,
 
     /// Descripción del proyecto.
-    description: String,
+    description: Option<String>,
 
     /// Estado actual del proyecto.
+    #[sqlx(rename = "state:ProjectState")]
     state: ProjectState,
+
+    /// Fecha de creación
+    pub created_at: NaiveDateTime,
+
+    /// Fecha de la Última modificación de este fila.
+    pub updated_at: NaiveDateTime,
 }
 
 /// Los distintos estados en los que se puede encontrar un proyecto.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, sqlx::Type)]
 enum ProjectState {
     /// El proyecto aún no inicia.
     NotStarted,
@@ -75,5 +86,43 @@ impl FromStr for ProjectState {
             "Cancelled" => Ok(Self::Cancelled),
             _ => Err(anyhow::anyhow!("No se ha podido parsear el String.")),
         }
+    }
+}
+
+impl ProjectModel {
+    pub async fn find_by_id(
+        id: uuid::Uuid,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<ProjectModel, sqlx::Error> {
+        let id = id.to_string().to_owned();
+
+        // Busco el proyecto.
+        let mut project: ProjectModel = sqlx::query_as(
+            r#"SELECT 
+                projects.uuid, 
+                projects.name, 
+                projects.description, 
+                projects.created_at, 
+                projects.updated_at, 
+                projects.state as "state:ProjectState"  
+            FROM projects WHERE projects.uuid = $1"#,
+        )
+        .bind(id.clone())
+        .fetch_one(pool)
+        .await?;
+
+        let involved: Vec<ClubMemberModel> = sqlx::query_as(
+            r#"SELECT club_members.* FROM club_members
+            JOIN project_involvement ON project_involvement.club_member_uuid = club_members.uuid
+            WHERE project_involvement.project_uuid = $1"#,
+        )
+        .bind(id)
+        .fetch_all(pool)
+        .await?;
+
+        // Busco a los involucrados.
+        project.involved = ClubMemberResponse::from_vector(&involved);
+
+        Ok(project)
     }
 }
