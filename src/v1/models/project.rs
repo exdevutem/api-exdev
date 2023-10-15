@@ -7,6 +7,7 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use sqlx::sqlite::SqliteQueryResult;
 
 use crate::v1::schemas::club_member::ClubMemberResponse;
 
@@ -121,6 +122,24 @@ impl ProjectModel {
     pub async fn get_all(pool: &sqlx::SqlitePool) -> Result<Vec<ProjectModel>, sqlx::Error> {
         sqlx::query_as(r#"SELECT * FROM projects"#)
             .fetch_all(pool)
+            .await
+    }
+
+    pub async fn insert(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
+        unimplemented!();
+    }
+
+    pub async fn update(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
+        unimplemented!();
+    }
+
+    pub async fn delete(
+        id: uuid::Uuid,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<SqliteQueryResult, sqlx::Error> {
+        sqlx::query("DELETE FROM projects WHERE $1")
+            .bind(id.to_string())
+            .execute(pool)
             .await
     }
 }
