@@ -41,5 +41,10 @@ pub fn add_member_routes() -> actix_web::Scope {
 pub fn add_project_routes() -> actix_web::Scope {
     use projects as p;
 
-    actix_web::web::scope("/projects").service(p::get_single_member)
+    actix_web::web::scope("/projects")
+        .service(p::get_single_member)
+        .service(p::get_projects)
+        .service(p::create_project)
+        .service(p::update_project)
+        .service(p::delete_project)
 }

@@ -31,6 +31,7 @@ pub struct ProjectModel {
 
     /// Integrantes relacionados a este proyecto.
     #[sqlx(skip)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     involved: Vec<ClubMemberResponse>,
 
     /// Fecha de creación
@@ -115,5 +116,11 @@ impl ProjectModel {
         project.involved = ClubMemberResponse::from_vector(&involved);
 
         Ok(project)
+    }
+
+    pub async fn get_all(pool: &sqlx::SqlitePool) -> Result<Vec<ProjectModel>, sqlx::Error> {
+        sqlx::query_as(r#"SELECT * FROM projects"#)
+            .fetch_all(pool)
+            .await
     }
 }
