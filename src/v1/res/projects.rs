@@ -48,16 +48,21 @@ async fn create_project(
     ))
 }
 
-#[put("/{id}")]
+#[put("/update/{id}")]
 async fn update_project(
-    _path: Path<uuid::Uuid>,
-    _body: Json<UpdateProjectSchema>,
-    _data: Data<AppState>,
-) -> Result<BasicResponse<()>, DBError> {
-    unimplemented!()
+    path: Path<uuid::Uuid>,
+    body: Json<UpdateProjectSchema>,
+    data: Data<AppState>,
+) -> Result<BasicResponse<ProjectModel>, DBError> {
+    let project = ProjectModel::update(path.into_inner(), body.into_inner(), &data.pool).await?;
+
+    Ok(BasicResponse::new(
+        "Se ha actualizado el proyecto",
+        Some(project),
+    ))
 }
 
-#[delete("/{id}")]
+#[delete("/delete/{id}")]
 async fn delete_project(
     path: Path<uuid::Uuid>,
     data: Data<AppState>,

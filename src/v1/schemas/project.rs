@@ -17,7 +17,13 @@ pub struct UpdateProjectSchema {
 
     pub description: Option<String>,
 
-    pub involved: Option<Vec<uuid::Uuid>>,
+    pub involved: Option<UpdateInvolvedSchema>,
 
     pub state: Option<ProjectState>,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct UpdateInvolvedSchema {
+    pub add: Option<Vec<uuid::Uuid>>,
+    pub remove: Option<Vec<uuid::Uuid>>,
 }

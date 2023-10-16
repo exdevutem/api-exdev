@@ -7,7 +7,8 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use sqlx::{sqlite::SqliteQueryResult, QueryBuilder, Sqlite};
+use sqlx::{sqlite::SqliteQueryResult, QueryBuilder, Row, Sqlite};
+use uuid::Uuid;
 
 use crate::v1::schemas::{
     club_member::ClubMemberResponse,
@@ -157,10 +158,89 @@ impl ProjectModel {
     }
 
     pub async fn update(
-        _data: &UpdateProjectSchema,
-        _pool: &sqlx::SqlitePool,
-    ) -> Result<(), sqlx::Error> {
-        unimplemented!();
+        id: uuid::Uuid,
+        data: UpdateProjectSchema,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<ProjectModel, sqlx::Error> {
+        // Valores anteriores.
+        let previous = ProjectModel::find_by_id(id, pool).await?;
+
+        // Actualizo el proyecto.
+        sqlx::query(
+            r#" UPDATE projects
+                    SET name = ?, description = ?, state = ? WHERE uuid = ?"#,
+        )
+        .bind(data.name.unwrap_or(previous.name))
+        .bind(
+            data.description
+                .unwrap_or(previous.description.unwrap_or_default()),
+        )
+        .bind(data.state.unwrap_or(previous.state))
+        .bind(id.to_string())
+        .execute(pool)
+        .await?;
+
+        let schema = data.involved.unwrap_or_default();
+        // Si quieren agregar involucrados:
+        if let Some(mut add) = schema.add {
+            // Obtengo a los involucrados en el proyecto.
+            let previous_ids = sqlx::query(
+                "SELECT club_member_uuid FROM project_involvement WHERE project_uuid = ?",
+            )
+            .bind(id.to_string())
+            .fetch_all(pool)
+            .await?
+            .iter()
+            .map(|row| -> String { row.get("club_member_uuid") })
+            .collect::<String>();
+
+            // Quito los duplicados que quieren agregar.
+            add.sort_unstable();
+            add.dedup();
+
+            // Quito los involucrados que ya están en el proyecto.
+            let add = add
+                .iter()
+                .filter(|add_id| !previous_ids.contains(&add_id.to_string()))
+                .collect::<Vec<&Uuid>>();
+
+            // Agrego a los resultantes.
+            let mut qb: QueryBuilder<Sqlite> = QueryBuilder::new(
+                "INSERT INTO project_involvement(project_uuid, club_member_uuid) ",
+            );
+
+            qb.push_values(add, |mut b, value| {
+                b.push_bind(id.to_string()).push_bind(value.to_string());
+            });
+
+            qb.build().execute(pool).await?;
+        }
+
+        // Si quieren quitar involucrados
+        if let Some(mut remove) = schema.remove {
+            if !remove.is_empty() {
+                // Quito los duplicados.
+                remove.sort_unstable();
+                remove.dedup();
+
+                let mut qb: QueryBuilder<Sqlite> = QueryBuilder::new(
+                    "DELETE FROM project_involvement WHERE club_member_uuid IN (",
+                );
+
+                let mut separated = qb.separated(", ");
+
+                for id in remove.iter() {
+                    separated.push_bind(id.to_string());
+                }
+
+                separated.push_unseparated(") ");
+
+                qb.build().execute(pool).await?;
+            }
+        }
+
+        // Entrego el proyecto resultante.
+        ProjectModel::find_by_id(id, pool).await
     }
 
     pub async fn delete(
