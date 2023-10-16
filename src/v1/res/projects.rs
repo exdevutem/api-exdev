@@ -1,6 +1,7 @@
-use actix_web::web::{Data, Path};
+use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, put};
 
+use crate::v1::schemas::project::{CreateProjectSchema, UpdateProjectSchema};
 use crate::{
     v1::{
         models::project::ProjectModel,
@@ -35,14 +36,23 @@ async fn get_projects(data: Data<AppState>) -> Result<BasicResponse<Vec<ProjectM
 }
 
 #[post("/create")]
-async fn create_project(data: Data<AppState>) -> Result<BasicResponse<()>, DBError> {
-    unimplemented!()
+async fn create_project(
+    body: Json<CreateProjectSchema>,
+    data: Data<AppState>,
+) -> Result<BasicResponse<ProjectModel>, DBError> {
+    let project = ProjectModel::create(body.into_inner(), &data.pool).await?;
+
+    Ok(BasicResponse::new(
+        "Se ha creado un nuevo proyecto",
+        Some(project),
+    ))
 }
 
 #[put("/{id}")]
 async fn update_project(
-    path: Path<uuid::Uuid>,
-    data: Data<AppState>,
+    _path: Path<uuid::Uuid>,
+    _body: Json<UpdateProjectSchema>,
+    _data: Data<AppState>,
 ) -> Result<BasicResponse<()>, DBError> {
     unimplemented!()
 }

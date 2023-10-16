@@ -7,9 +7,12 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteQueryResult;
+use sqlx::{sqlite::SqliteQueryResult, QueryBuilder, Sqlite};
 
-use crate::v1::schemas::club_member::ClubMemberResponse;
+use crate::v1::schemas::{
+    club_member::ClubMemberResponse,
+    project::{CreateProjectSchema, UpdateProjectSchema},
+};
 
 use super::club_member::ClubMemberModel;
 
@@ -44,7 +47,7 @@ pub struct ProjectModel {
 
 /// Los distintos estados en los que se puede encontrar un proyecto.
 #[derive(Debug, Deserialize, Serialize, sqlx::Type)]
-enum ProjectState {
+pub enum ProjectState {
     /// El proyecto aún no inicia.
     NotStarted,
 
@@ -125,11 +128,38 @@ impl ProjectModel {
             .await
     }
 
-    pub async fn insert(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
-        unimplemented!();
+    pub async fn create(
+        data: CreateProjectSchema,
+        pool: &sqlx::SqlitePool,
+    ) -> Result<ProjectModel, sqlx::Error> {
+        let id = uuid::Uuid::new_v4();
+        sqlx::query(r#"INSERT INTO projects(uuid, name, description) VALUES (?, ?, ?)"#)
+            .bind(id.to_string())
+            .bind(data.name)
+            .bind(data.description)
+            .execute(pool)
+            .await?;
+
+        // Agrega a todos los involucrados relacionados al proyecto.
+        if let Some(member_ids) = data.involved {
+            let mut qb: QueryBuilder<Sqlite> = QueryBuilder::new(
+                "INSERT INTO project_involvement(project_uuid, club_member_uuid) ",
+            );
+
+            qb.push_values(member_ids, |mut b, value| {
+                b.push_bind(id.to_string()).push_bind(value.to_string());
+            });
+
+            qb.build().execute(pool).await?;
+        }
+
+        ProjectModel::find_by_id(id, pool).await
     }
 
-    pub async fn update(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error> {
+    pub async fn update(
+        _data: &UpdateProjectSchema,
+        _pool: &sqlx::SqlitePool,
+    ) -> Result<(), sqlx::Error> {
         unimplemented!();
     }
 
