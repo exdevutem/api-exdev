@@ -95,6 +95,10 @@ impl FromStr for ProjectState {
 }
 
 impl ProjectModel {
+    /// Encuentra un proyecto según su UUID
+    ///
+    /// Además, encuentra y transforma todos los usuarios involucrados en ese proyecto hacia
+    /// ClubMemberResponses.
     pub async fn find_by_id(
         id: uuid::Uuid,
         pool: &sqlx::SqlitePool,
@@ -123,12 +127,18 @@ impl ProjectModel {
         Ok(project)
     }
 
+    /// Obtiene todos los proyectos de la base de datos.
+    ///
+    /// Esta función no encuentra a lo involucrados en los proyectos.
     pub async fn get_all(pool: &sqlx::SqlitePool) -> Result<Vec<ProjectModel>, sqlx::Error> {
         sqlx::query_as(r#"SELECT * FROM projects"#)
             .fetch_all(pool)
             .await
     }
 
+    /// Crea un nuevo proyecto y lo retorna
+    ///
+    /// Además se encarga de insertar a todos los involucrados en el proyecto.
     pub async fn create(
         data: CreateProjectSchema,
         pool: &sqlx::SqlitePool,
@@ -157,6 +167,9 @@ impl ProjectModel {
         ProjectModel::find_by_id(id, pool).await
     }
 
+    /// Actualiza un proyecto
+    ///
+    /// Puede actualizar el estado del proyecto, y agregar o quitar involucrados según su UUID.
     pub async fn update(
         id: uuid::Uuid,
         data: UpdateProjectSchema,
@@ -243,6 +256,10 @@ impl ProjectModel {
         ProjectModel::find_by_id(id, pool).await
     }
 
+    /// Elimina un proyecto de la base de datos
+    ///
+    /// De acuerdo a la configuración de la BDD, esto debería involucrar todas las filas de project
+    /// involvement donde esté relacionado ese proyecto.
     pub async fn delete(
         id: uuid::Uuid,
         pool: &sqlx::SqlitePool,

@@ -1,3 +1,16 @@
+//! Handlers relacionados a la creación de nuevos proyectos del club.
+//!
+//! La forma recomendada de crear nuevos proyectos es via un documento tipo MarkDown en el campo de
+//! descripción, pero hagan la wea que quieran sinceramente.
+//!
+//! Estas funciones siguen un patrón CRUD de API típico con las 5 funciones que esperarías
+//! encontrar en cualquier API REST basada en recursos:
+//! - Mostrar todo
+//! - Mostrar uno
+//! - Crear
+//! - Actualizar
+//! - Eliminar.
+
 use actix_web::web::{Data, Json, Path};
 use actix_web::{delete, get, post, put};
 
@@ -27,6 +40,9 @@ async fn get_single_member(
     ))
 }
 
+/// Obtiene todos los proyectos de la API.
+///
+/// Esta lista no entrega una sublista de involucrados.
 #[get("")]
 async fn get_projects(data: Data<AppState>) -> Result<BasicResponse<Vec<ProjectModel>>, DBError> {
     Ok(BasicResponse::new(
@@ -35,6 +51,9 @@ async fn get_projects(data: Data<AppState>) -> Result<BasicResponse<Vec<ProjectM
     ))
 }
 
+/// Crea un nuevo proyecto en la API.
+///
+/// Además, retorna el proyecto de la misma forma en que lo haría al hacer `GET /{id}`
 #[post("/create")]
 async fn create_project(
     body: Json<CreateProjectSchema>,
@@ -48,6 +67,9 @@ async fn create_project(
     ))
 }
 
+/// Actualiza la información del proyecto.
+///
+/// Además, retorna los nuevos valores del proyecto.
 #[put("/update/{id}")]
 async fn update_project(
     path: Path<uuid::Uuid>,
@@ -62,6 +84,7 @@ async fn update_project(
     ))
 }
 
+/// Elimina un proyecto.
 #[delete("/delete/{id}")]
 async fn delete_project(
     path: Path<uuid::Uuid>,
