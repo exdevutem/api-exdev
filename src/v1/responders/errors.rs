@@ -8,6 +8,7 @@ use actix_web::{
     http::{header::ContentType, StatusCode},
     HttpResponse,
 };
+use serde_json::json;
 
 /// Error de la base de datos.
 ///
@@ -42,9 +43,11 @@ impl actix_web::error::ResponseError for DBError {
     fn error_response(&self) -> actix_web::HttpResponse<actix_web::body::BoxBody> {
         HttpResponse::build(self.status_code())
             .insert_header(ContentType::json())
-            .body(match self.0 {
-                sqlx::Error::RowNotFound => "No se ha encontrado el recurso buscado",
-                _ => "Ocurrió un error en la bdd.",
+            .json(match self.0 {
+                sqlx::Error::RowNotFound => {
+                    json!({"status": 404, "message": "No se ha encontrado el recurso buscado"})
+                }
+                _ => json!({"status": 500, "message": "Ocurrió un error en la bdd.", "debug": self.0.to_string()}),
             })
     }
 
