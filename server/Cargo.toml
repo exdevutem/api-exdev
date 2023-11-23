@@ -1,0 +1,19 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "^4.4.0"
+dotenv = "0.15.0"
+serde = {version = "1.0.189", features = ["derive"]}
+serde_json = "1.0.107"
+sqlx = { version = "0.7", features = [ "sqlite", "runtime-async-std", "time", "chrono"] }
+uuid = { version = "1.4.1", features = ["serde", "v4"] }
+chrono = { version = "0.4.31", features = ["serde"] }
+prefixed-api-key = { version =  "0.1.0", features = ["sha2"] }
+rand = { version = "0.8.5", features = ["std"] }
+sha2 = "0.10.8"
+anyhow = "1.0.75"

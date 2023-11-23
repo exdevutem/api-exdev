@@ -38,7 +38,7 @@ fn op_to_string(op: &Op) -> String {
 }
 
 fn main() -> anyhow::Result<()> {
-    let input = String::from("assets/Trabajo asalariado y Capital.pdf");
+    let input = String::from("indexer/assets/Introduction_to_algorithms-3rd Edition.pdf");
 
     let pdf = pdf::file::FileOptions::cached().open(input)?;
 
@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
         println!(
             r#" 
         -------------------------------------------
-        Página número {i}
+                    Página número {i}
         -------------------------------------------
         "#
         );
