@@ -6,3 +6,6 @@
 
 # SQLite3 Databases
 *.db
+
+# Carpeta con documentos de trabajo.
+assets
