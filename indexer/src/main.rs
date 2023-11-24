@@ -1,3 +1,6 @@
+//! Indexador de documentos para plataforma estudiantil, utilizando la estrategia TF-IDF
+
+use clap::Parser;
 use std::ops::Deref;
 
 use pdf::content::Op;
@@ -16,18 +19,18 @@ fn op_to_string(op: &Op) -> String {
         Op::TextDrawAdjusted { array } => {
             let text = array.iter().fold(String::new(), |mut acc, txt| {
                 use pdf::content::TextDrawAdjusted::Text;
-                match txt {
-                    Text(texto) => {
-                        let texto = texto
-                            .as_bytes()
-                            .iter()
-                            .map(|&c| c as char)
-                            .collect::<String>();
+                if let Text(texto) = txt {
+                    let texto = texto
+                        .as_bytes()
+                        .iter()
+                        .map(|&c| c as char)
+                        .collect::<String>();
 
-                        acc.push_str(texto.as_str());
-                    }
-                    _ => (),
+                    acc.push_str(texto.as_str());
+                } else {
+                    acc.push_str(" ")
                 }
+
                 acc
             });
 
@@ -37,21 +40,17 @@ fn op_to_string(op: &Op) -> String {
     }
 }
 
+#[derive(Parser, Debug)]
+struct Args {
+    path: std::path::PathBuf,
+}
+
 fn main() -> anyhow::Result<()> {
-    let input = String::from("indexer/assets/Introduction_to_algorithms-3rd Edition.pdf");
+    let args = Args::parse();
 
-    let pdf = pdf::file::FileOptions::cached().open(input)?;
+    let pdf = pdf::file::FileOptions::cached().open(args.path)?;
 
-    for (i, page) in pdf.pages().enumerate() {
-        println!(
-            r#" 
-        -------------------------------------------
-                    Página número {i}
-        -------------------------------------------
-        "#
-        );
-
-        let page = page?;
+    for page in pdf.pages().filter_map(Result::ok) {
         let page = page.deref();
 
         let content = match &page.contents {
