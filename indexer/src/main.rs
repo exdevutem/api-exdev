@@ -14,7 +14,7 @@ fn op_to_string(op: &Op) -> String {
                 .map(|&c| c as char)
                 .collect::<String>();
 
-            datos
+            format!("{datos} ")
         }
         Op::TextDrawAdjusted { array } => {
             let text = array.iter().fold(String::new(), |mut acc, txt| {
@@ -27,8 +27,6 @@ fn op_to_string(op: &Op) -> String {
                         .collect::<String>();
 
                     acc.push_str(texto.as_str());
-                } else {
-                    acc.push_str(" ")
                 }
 
                 acc
