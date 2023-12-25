@@ -13,13 +13,25 @@ struct Args {
 fn process_buf(buf: String) -> HashMap<String, u32> {
     let mut terms = HashMap::<String, u32>::new();
 
+    buf.split(|c: char| c.is_whitespace())
+        .map(|w| w.to_lowercase())
+        .for_each(|word| {
+            if let Some(counter) = terms.get(&word) {
+                terms.insert(String::from(word), counter + 1);
+            } else {
+                terms.insert(String::from(word), 1);
+            }
+        });
+
     terms
 }
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    println!("{}", pdf::read_file(&args.path)?);
+    let map = process_buf(pdf::read_file(&args.path)?);
+
+    println!("{map:?}");
 
     Ok(())
 }
