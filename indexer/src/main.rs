@@ -15,15 +15,20 @@ fn process_buf(buf: String) -> HashMap<String, u32> {
 
     buf.split(|c: char| c.is_whitespace())
         .map(|w| w.to_lowercase())
-        .for_each(|word| {
-            if let Some(counter) = terms.get(&word) {
-                terms.insert(String::from(word), counter + 1);
-            } else {
-                terms.insert(String::from(word), 1);
-            }
+        // TODO: Reemplazar el map de abajo por un Lexer
+        .map(|w| w.chars().filter(|c| c.is_alphanumeric()).collect())
+        .for_each(|word: String| {
+            let counter = terms.get(&word).unwrap_or(&0) + 1;
+            terms.insert(String::from(word), counter);
         });
 
     terms
+}
+
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct Term {
+    frecuency: u32,
+    word: String,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -31,7 +36,18 @@ fn main() -> anyhow::Result<()> {
 
     let map = process_buf(pdf::read_file(&args.path)?);
 
-    println!("{map:?}");
+    let mut top = map
+        .iter()
+        .map(|(k, v)| Term {
+            word: k.clone(),
+            frecuency: *v,
+        })
+        .collect::<Vec<Term>>();
+
+    top.sort_unstable();
+    top.reverse();
+
+    top.iter().take(10).for_each(|t| println!("{t:?}"));
 
     Ok(())
 }
