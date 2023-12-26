@@ -1,9 +1,11 @@
 //! Indexador de documentos para plataforma estudiantil, utilizando la estrategia TF-IDF
 
+mod lexer;
 mod pdf;
 use std::collections::HashMap;
 
 use clap::Parser;
+use lexer::Lexer;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -13,14 +15,12 @@ struct Args {
 fn process_buf(buf: String) -> HashMap<String, u32> {
     let mut terms = HashMap::<String, u32>::new();
 
-    buf.split(|c: char| c.is_whitespace())
-        .map(|w| w.to_lowercase())
-        // TODO: Reemplazar el map de abajo por un Lexer
-        .map(|w| w.chars().filter(|c| c.is_alphanumeric()).collect())
-        .for_each(|word: String| {
-            let counter = terms.get(&word).unwrap_or(&0) + 1;
-            terms.insert(String::from(word), counter);
-        });
+    Lexer(&buf).for_each(|word| {
+        let counter = terms.get(&String::from(word)).unwrap_or(&0) + 1;
+        terms.insert(word.to_owned(), counter);
+    });
+
+    println!("{:?}", Lexer(&buf).collect::<Vec<_>>());
 
     terms
 }
@@ -47,7 +47,10 @@ fn main() -> anyhow::Result<()> {
     top.sort_unstable();
     top.reverse();
 
-    top.iter().take(10).for_each(|t| println!("{t:?}"));
+    println!("-------- Hottest words -----------");
+    top.iter()
+        .take(10)
+        .for_each(|t| println!("{t:?} - {:?}", t.word.bytes()));
 
     Ok(())
 }
