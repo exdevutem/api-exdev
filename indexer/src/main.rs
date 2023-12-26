@@ -12,24 +12,24 @@ struct Args {
     path: std::path::PathBuf,
 }
 
-fn process_buf(buf: String) -> HashMap<String, u32> {
-    let mut terms = HashMap::<String, u32>::new();
+fn process_buf(buf: String) -> Index {
+    let mut terms = Index::new();
 
     Lexer(&buf).for_each(|word| {
         let counter = terms.get(&String::from(word)).unwrap_or(&0) + 1;
         terms.insert(word.to_owned(), counter);
     });
 
-    println!("{:?}", Lexer(&buf).collect::<Vec<_>>());
-
     terms
 }
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Term {
-    frecuency: u32,
+    frecuency: usize,
     word: String,
 }
+
+type Index = HashMap<String, usize>;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();

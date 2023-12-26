@@ -7,31 +7,37 @@ impl<'a> Iterator for Lexer<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.0 = self.0.trim();
 
-        let chars = self.0.chars().collect::<Vec<_>>();
+        let mut chars = self.0.char_indices();
 
-        match chars.first() {
+        match chars.next() {
             None => None,
-            Some(c) if c.is_alphabetic() => {
-                let mut n = 0;
-                while chars.get(n).is_some() && chars.get(n).unwrap().is_alphanumeric() {
-                    n += 1;
+            Some((_, c)) if c.is_alphabetic() => {
+                while let Some((n, c)) = chars.next() {
+                    if !c.is_alphanumeric() {
+                        let res = &self.0[0..n];
+                        self.0 = &self.0[n..];
+
+                        return Some(res);
+                    }
                 }
 
-                let res = &self.0[0..n];
-                self.0 = &self.0[n..];
-
-                Some(res)
+                let res = self.0;
+                self.0 = "";
+                return Some(res);
             }
-            Some(c) if c.is_numeric() => {
-                let mut n = 0;
-                while chars.get(n).is_some() && chars.get(n).unwrap().is_numeric() {
-                    n += 1;
+            Some((_, c)) if c.is_numeric() => {
+                while let Some((n, c)) = chars.next() {
+                    if !c.is_numeric() {
+                        let res = &self.0[0..n];
+                        self.0 = &self.0[n..];
+
+                        return Some(res);
+                    }
                 }
 
-                let res = &self.0[0..n];
-                self.0 = &self.0[n..];
-
-                Some(res)
+                let res = self.0;
+                self.0 = "";
+                return Some(res);
             }
             Some(_) => {
                 let Some(n) = self.0.char_indices().map(|(i, _)| i).nth(1) else {
