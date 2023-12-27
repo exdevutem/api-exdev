@@ -2,8 +2,9 @@
 
 mod lexer;
 mod pdf;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
+use anyhow::anyhow;
 use clap::Parser;
 use lexer::Lexer;
 
@@ -23,6 +24,17 @@ fn process_buf(buf: String) -> Index {
     terms
 }
 
+fn read_file(p: &PathBuf) -> anyhow::Result<String> {
+    if let Some(ext) = p.extension() {
+        match ext.to_str() {
+            Some("pdf") => pdf::read_file(p),
+            _ => unimplemented!(),
+        }
+    } else {
+        Err(anyhow!("Couldn't get file extension of {p:?}"))
+    }
+}
+
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Term {
     frecuency: usize,
@@ -34,23 +46,33 @@ type Index = HashMap<String, usize>;
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let map = process_buf(pdf::read_file(&args.path)?);
+    let mut indexes = HashMap::new();
 
-    let mut top = map
-        .iter()
-        .map(|(k, v)| Term {
-            word: k.clone(),
-            frecuency: *v,
-        })
-        .collect::<Vec<Term>>();
+    match args.path {
+        p if p.is_dir() => {
+            std::fs::read_dir(p)?
+                .filter_map(Result::ok)
+                .for_each(|file| {
+                    if let Ok(content) = read_file(&file.path()) {
+                        let map = process_buf(content);
 
-    top.sort_unstable();
-    top.reverse();
+                        indexes.insert(file.path(), map);
+                    }
+                });
+        }
+        p if p.is_file() => {
+            if let Ok(content) = read_file(&p) {
+                let map = process_buf(content);
 
-    println!("-------- Hottest words -----------");
-    top.iter()
-        .take(10)
-        .for_each(|t| println!("{t:?} - {:?}", t.word.bytes()));
+                indexes.insert(p, map);
+            }
+        }
+        _ => unreachable!(),
+    }
+
+    indexes.iter().for_each(|(a, b)| {
+        println!("{a:?} : {b:?}\n");
+    });
 
     Ok(())
 }
