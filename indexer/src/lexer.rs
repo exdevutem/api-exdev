@@ -77,4 +77,21 @@ mod test {
 
         assert_eq!(tokens, vec!["1234", ",", "alfa12", "CR7", "Ho", "-", "18"]);
     }
+
+    #[test]
+    fn multiple_paragraphs() {
+        let input = r#"Este es un parrafo.
+        Este es otro parra-
+        fo, que es acortado."#;
+
+        let tokens = Lexer(input).collect::<Vec<_>>();
+
+        assert_eq!(
+            tokens,
+            vec![
+                "Este", "es", "un", "parrafo", ".", "Este", "es", "otro", "parrafo", ",", "que",
+                "es", "acortado", "."
+            ]
+        );
+    }
 }
