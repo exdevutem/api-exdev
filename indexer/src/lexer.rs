@@ -1,59 +1,36 @@
-#[derive(Debug)]
-pub struct Lexer<'a>(pub &'a str);
+pub struct Lexer {
+    input: String,
+}
 
-impl<'a> Iterator for Lexer<'a> {
-    type Item = &'a str;
+impl<'a> Lexer {
+    pub fn new(input: &'a str) -> Self {
+        let input = input.replace("-\n", "").replace("\n", " ");
+
+        Lexer { input }
+    }
+}
+
+impl<'a> Iterator for Lexer {
+    type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0 = self.0.trim();
+        let (word, new) = self
+            .input
+            .split_once(" ")
+            .unwrap_or((self.input.as_str(), ""));
 
-        let mut chars = self.0.char_indices();
-
-        match chars.next() {
-            None => None,
-            Some((_, c)) if c.is_alphabetic() => {
-                while let Some((n, c)) = chars.next() {
-                    if !c.is_alphanumeric() {
-                        let res = &self.0[0..n];
-                        self.0 = &self.0[n..];
-
-                        return Some(res);
-                    }
-                }
-
-                let res = self.0;
-                self.0 = "";
-                return Some(res);
-            }
-            Some((_, c)) if c.is_numeric() => {
-                while let Some((n, c)) = chars.next() {
-                    if !c.is_numeric() {
-                        let res = &self.0[0..n];
-                        self.0 = &self.0[n..];
-
-                        return Some(res);
-                    }
-                }
-
-                let res = self.0;
-                self.0 = "";
-                return Some(res);
-            }
-            Some(_) => {
-                let Some(n) = self.0.char_indices().map(|(i, _)| i).nth(1) else {
-                    // Este es un edge case. En caso de que el ultimo caracter sea un caracter no
-                    // alfanumerico, retorno lo que queda de string nomas.
-                    let res = self.0;
-                    self.0 = "";
-                    return Some(res);
-                };
-
-                let res = &self.0[0..n];
-                self.0 = &self.0[n..];
-
-                Some(res)
-            }
+        if word == "" {
+            return None;
         }
+
+        let word = word
+            .chars()
+            .filter(|c| c.is_alphabetic())
+            .collect::<String>();
+
+        self.input = new.trim().to_owned();
+
+        Some(word.to_lowercase())
     }
 }
 
@@ -64,33 +41,33 @@ mod test {
     #[test]
     fn gets_basic_lex() {
         let string = "Hello, world.";
-        let tokens = Lexer(string).collect::<Vec<_>>();
+        let tokens = Lexer::new(string).filter(|s| s.ne("")).collect::<Vec<_>>();
 
-        assert_eq!(tokens, vec!["Hello", ",", "world", "."]);
+        assert_eq!(tokens, vec!["Hello", "world"]);
     }
 
     #[test]
     fn working_with_numbers() {
         let string = "1234, alfa12 CR7 Ho-18";
 
-        let tokens = Lexer(string).collect::<Vec<_>>();
+        let tokens = Lexer::new(string).filter(|s| s.ne("")).collect::<Vec<_>>();
 
-        assert_eq!(tokens, vec!["1234", ",", "alfa12", "CR7", "Ho", "-", "18"]);
+        assert_eq!(tokens, vec!["alfa", "CR", "Ho"]);
     }
 
     #[test]
     fn multiple_paragraphs() {
         let input = r#"Este es un parrafo.
-        Este es otro parra-
-        fo, que es acortado."#;
+Este es otro parra-
+fo, que es acortado."#;
 
-        let tokens = Lexer(input).collect::<Vec<_>>();
+        let tokens = Lexer::new(input).filter(|s| s.ne("")).collect::<Vec<_>>();
 
         assert_eq!(
             tokens,
             vec![
-                "Este", "es", "un", "parrafo", ".", "Este", "es", "otro", "parrafo", ",", "que",
-                "es", "acortado", "."
+                "Este", "es", "un", "parrafo", "Este", "es", "otro", "parrafo", "que", "es",
+                "acortado",
             ]
         );
     }

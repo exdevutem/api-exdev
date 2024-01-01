@@ -16,8 +16,8 @@ struct Args {
 fn process_buf(buf: String) -> Index {
     let mut terms = Index::new();
 
-    Lexer(&buf).for_each(|word| {
-        let counter = terms.get(&String::from(word)).unwrap_or(&0) + 1;
+    Lexer::new(&buf).for_each(|word| {
+        let counter = terms.get(&String::from(&word)).unwrap_or(&0) + 1;
         terms.insert(word.to_owned(), counter);
     });
 
