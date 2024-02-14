@@ -70,9 +70,25 @@ fn main() -> anyhow::Result<()> {
         _ => unreachable!(),
     }
 
-    indexes.iter().for_each(|(a, b)| {
-        println!("{a:?} : {b:?}\n");
+    let mut idf = indexes.iter().fold(HashMap::new(), |mut acc, (_, e)| {
+        for (term, _) in e.iter() {
+            let found = acc.get(term).unwrap_or(&0.0) + 1.0;
+            acc.insert(term.clone(), found);
+        }
+        acc
     });
+
+    let docs = indexes.len();
+
+    println!("{idf:?}");
+    println!("'Linux' term: {linux:?}", linux = idf.get("linux"));
+
+    for (_, i) in idf.iter_mut() {
+        *i = (docs as f64 / *i as f64).ln();
+    }
+
+    println!("{idf:?}");
+    println!("'Linux' term: {linux:?}", linux = idf.get("linux"));
 
     Ok(())
 }
