@@ -10,7 +10,11 @@ use lexer::Lexer;
 
 #[derive(Parser, Debug)]
 struct Args {
+    #[arg(help = "Archivo o directorio por el cual buscar.")]
     path: std::path::PathBuf,
+
+    #[arg(short, long, help = "Termino por el que hacer la busqueda.")]
+    term: Option<String>,
 }
 
 fn process_buf(buf: String) -> Index {
@@ -28,7 +32,7 @@ fn read_file(p: &PathBuf) -> anyhow::Result<String> {
     if let Some(ext) = p.extension() {
         match ext.to_str() {
             Some("pdf") => pdf::read_file(p),
-            _ => unimplemented!(),
+            _ => Err(anyhow!("Not implemented or invalid file")),
         }
     } else {
         Err(anyhow!("Couldn't get file extension of {p:?}"))
@@ -70,6 +74,7 @@ fn main() -> anyhow::Result<()> {
         _ => unreachable!(),
     }
 
+    let docs = indexes.len();
     let mut idf = indexes.iter().fold(HashMap::new(), |mut acc, (_, e)| {
         for (term, _) in e.iter() {
             let found = acc.get(term).unwrap_or(&0.0) + 1.0;
@@ -78,17 +83,21 @@ fn main() -> anyhow::Result<()> {
         acc
     });
 
-    let docs = indexes.len();
-
-    println!("{idf:?}");
-    println!("'Linux' term: {linux:?}", linux = idf.get("linux"));
-
     for (_, i) in idf.iter_mut() {
         *i = (docs as f64 / *i as f64).ln();
     }
 
-    println!("{idf:?}");
-    println!("'Linux' term: {linux:?}", linux = idf.get("linux"));
+    // Si se introdujo un termino de busca, imprimo
+    // cuales son los documentos mas relevantes.
+    if let Some(search) = args.term {
+        let search = search.to_lowercase();
+        indexes.iter().for_each(|(path, index)| {
+            println!(
+                "{path:?} - {}",
+                *index.get(&search).unwrap_or(&0) as f64 * idf.get(&search).unwrap_or(&0.0)
+            );
+        });
+    }
 
     Ok(())
 }
